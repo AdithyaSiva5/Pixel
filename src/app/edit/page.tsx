@@ -3,8 +3,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Download, Eraser, Pencil, RotateCcw } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/Slider";
 
 type Tool = 'pencil' | 'eraser';
 
@@ -22,11 +22,10 @@ const BinaryImageEditor: React.FC = () => {
     const [setupOpen, setSetupOpen] = useState<boolean>(true);
     const [tempCanvasSize, setTempCanvasSize] = useState<CanvasSize>({ width: 32, height: 32 });
     const [pixelSize, setPixelSize] = useState<number>(16);
-    const [redValue, setRedValue] = useState<string>('11111111');
-    const [greenValue, setGreenValue] = useState<string>('11111111');
-    const [blueValue, setBlueValue] = useState<string>('11111111');
+    const [redBits, setRedBits] = useState<boolean[]>(new Array(8).fill(true));
+    const [greenBits, setGreenBits] = useState<boolean[]>(new Array(8).fill(true));
+    const [blueBits, setBlueBits] = useState<boolean[]>(new Array(8).fill(true));
 
-    // Initialize canvas after size is set
     useEffect(() => {
         if (!canvasSize) return;
 
@@ -43,44 +42,49 @@ const BinaryImageEditor: React.FC = () => {
     }, [canvasSize]);
 
     const handleSetupCanvas = () => {
-        setCanvasSize(tempCanvasSize);
+        const limitedSize = {
+            width: Math.min(Math.max(tempCanvasSize.width, 1), 200),
+            height: Math.min(Math.max(tempCanvasSize.height, 1), 200)
+        };
+        setCanvasSize(limitedSize);
         setSetupOpen(false);
     };
 
-    const binaryToDecimal = (binary: string): number => parseInt(binary.padEnd(8, '0'), 2);
+    const bitsToDecimal = (bits: boolean[]): number => {
+        return bits.reduce((acc, bit, index) => acc + (bit ? Math.pow(2, 7 - index) : 0), 0);
+    };
 
     const getCurrentColor = (): string => {
-        return `rgb(${binaryToDecimal(redValue)}, ${binaryToDecimal(greenValue)}, ${binaryToDecimal(blueValue)})`;
+        const red = bitsToDecimal(redBits);
+        const green = bitsToDecimal(greenBits);
+        const blue = bitsToDecimal(blueBits);
+        return `rgb(${red}, ${green}, ${blue})`;
     };
 
-    const handleBinaryInput = (
-        index: number,
-        value: string,
-        currentValue: string,
-        setValue: (value: string) => void
-    ) => {
-        if (value !== '0' && value !== '1') return;
-
-        const newValue = currentValue.split('');
-        newValue[index] = value;
-        setValue(newValue.join(''));
-    };
-
-    const renderBinaryInputs = (
-        value: string,
-        setValue: (value: string) => void,
+    const renderBitButtons = (
+        bits: boolean[],
+        setBits: (newBits: boolean[]) => void,
         color: string
     ) => {
         return (
-            <div className="flex gap-1">
-                {Array.from({ length: 8 }).map((_, index) => (
-                    <Input
+            <div className="grid grid-cols-8 gap-1">
+                {bits.map((bit, index) => (
+                    <Button
                         key={index}
-                        value={value[index] || '0'}
-                        onChange={(e) => handleBinaryInput(index, e.target.value, value, setValue)}
-                        className={`w-8 h-8 p-0 text-center font-mono text-${color}-500`}
-                        maxLength={1}
-                    />
+                        variant={bit ? "default" : "outline"}
+                        size="sm"
+                        className={`w-10 h-10 p-0 font-mono ${bit
+                                ? `bg-${color}-500 hover:bg-${color}-600`
+                                : `hover:bg-${color}-100`
+                            }`}
+                        onClick={() => {
+                            const newBits = [...bits];
+                            newBits[index] = !bit;
+                            setBits(newBits);
+                        }}
+                    >
+                        {bit ? "1" : "0"}
+                    </Button>
                 ))}
             </div>
         );
@@ -153,30 +157,40 @@ const BinaryImageEditor: React.FC = () => {
             <Dialog open={setupOpen} onOpenChange={setSetupOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Setup Canvas Size</DialogTitle>
+                        <DialogTitle>Canvas Configuration</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="text-sm font-medium">Width (pixels)</label>
-                            <Input
-                                type="number"
-                                value={tempCanvasSize.width}
-                                onChange={(e) => setTempCanvasSize(prev => ({ ...prev, width: parseInt(e.target.value) || 32 }))}
-                                min={1}
-                                max={64}
-                            />
+                    <div className="space-y-6">
+                        <div className="space-y-4">
+                            <div>
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="text-sm font-medium">Width</label>
+                                    <span className="text-sm text-gray-500">{tempCanvasSize.width}px</span>
+                                </div>
+                                <Slider
+                                    min={1}
+                                    max={200}
+                                    step={1}
+                                    value={[tempCanvasSize.width]}
+                                    onValueChange={([value]) => setTempCanvasSize(prev => ({ ...prev, width: value }))}
+                                    className="py-4"
+                                />
+                            </div>
+                            <div>
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="text-sm font-medium">Height</label>
+                                    <span className="text-sm text-gray-500">{tempCanvasSize.height}px</span>
+                                </div>
+                                <Slider
+                                    min={1}
+                                    max={200}
+                                    step={1}
+                                    value={[tempCanvasSize.height]}
+                                    onValueChange={([value]) => setTempCanvasSize(prev => ({ ...prev, height: value }))}
+                                    className="py-4"
+                                />
+                            </div>
                         </div>
-                        <div>
-                            <label className="text-sm font-medium">Height (pixels)</label>
-                            <Input
-                                type="number"
-                                value={tempCanvasSize.height}
-                                onChange={(e) => setTempCanvasSize(prev => ({ ...prev, height: parseInt(e.target.value) || 32 }))}
-                                min={1}
-                                max={64}
-                            />
-                        </div>
-                        <Button onClick={handleSetupCanvas}>Create Canvas</Button>
+                        <Button onClick={handleSetupCanvas} className="w-full">Create Canvas</Button>
                     </div>
                 </DialogContent>
             </Dialog>
@@ -185,73 +199,84 @@ const BinaryImageEditor: React.FC = () => {
                 <div className="container mx-auto p-4 space-y-6">
                     <Card className="p-6">
                         <div className="space-y-6">
-                            <div className="flex justify-between items-start">
-                                <h1 className="text-2xl font-bold">Binary Image Editor</h1>
-                                <div className="flex flex-wrap gap-4">
-                                    <Button
-                                        variant={tool === 'pencil' ? 'default' : 'outline'}
-                                        onClick={() => setTool('pencil')}
-                                    >
-                                        <Pencil className="h-4 w-4 mr-2" />
-                                        Draw
-                                    </Button>
+                            <div className="flex flex-wrap gap-4">
+                                <Button
+                                    variant={tool === 'pencil' ? 'default' : 'outline'}
+                                    onClick={() => setTool('pencil')}
+                                >
+                                    <Pencil className="h-4 w-4 mr-2" />
+                                    Draw
+                                </Button>
 
-                                    <Button
-                                        variant={tool === 'eraser' ? 'default' : 'outline'}
-                                        onClick={() => setTool('eraser')}
-                                    >
-                                        <Eraser className="h-4 w-4 mr-2" />
-                                        Erase
-                                    </Button>
+                                <Button
+                                    variant={tool === 'eraser' ? 'default' : 'outline'}
+                                    onClick={() => setTool('eraser')}
+                                >
+                                    <Eraser className="h-4 w-4 mr-2" />
+                                    Erase
+                                </Button>
 
-                                    <Button variant="outline" onClick={clearCanvas}>
-                                        <RotateCcw className="h-4 w-4 mr-2" />
-                                        Clear
-                                    </Button>
+                                <Button variant="outline" onClick={clearCanvas}>
+                                    <RotateCcw className="h-4 w-4 mr-2" />
+                                    Clear
+                                </Button>
 
-                                    <Button variant="outline" onClick={downloadImage}>
-                                        <Download className="h-4 w-4 mr-2" />
-                                        Download
-                                    </Button>
-                                </div>
+                                <Button variant="outline" onClick={downloadImage}>
+                                    <Download className="h-4 w-4 mr-2" />
+                                    Download
+                                </Button>
                             </div>
 
-                            <Card className="p-4">
-                                <div className="space-y-4">
-                                    <h2 className="text-lg font-semibold">Binary Color Values</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-sm text-red-500 font-medium">Red Channel</label>
-                                            {renderBinaryInputs(redValue, setRedValue, 'red')}
-                                            <div className="text-sm">Dec: {binaryToDecimal(redValue)}</div>
+                            <Card className="p-6 bg-gray-50">
+                                <div className="space-y-6">
+                                    <h2 className="text-lg font-semibold">Binary Color Control</h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="space-y-6">
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-center">
+                                                    <label className="text-sm font-medium text-red-500">Red Channel</label>
+                                                    <span className="text-sm text-gray-500">Dec: {bitsToDecimal(redBits)}</span>
+                                                </div>
+                                                {renderBitButtons(redBits, setRedBits, 'red')}
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-center">
+                                                    <label className="text-sm font-medium text-green-500">Green Channel</label>
+                                                    <span className="text-sm text-gray-500">Dec: {bitsToDecimal(greenBits)}</span>
+                                                </div>
+                                                {renderBitButtons(greenBits, setGreenBits, 'green')}
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-center">
+                                                    <label className="text-sm font-medium text-blue-500">Blue Channel</label>
+                                                    <span className="text-sm text-gray-500">Dec: {bitsToDecimal(blueBits)}</span>
+                                                </div>
+                                                {renderBitButtons(blueBits, setBlueBits, 'blue')}
+                                            </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm text-green-500 font-medium">Green Channel</label>
-                                            {renderBinaryInputs(greenValue, setGreenValue, 'green')}
-                                            <div className="text-sm">Dec: {binaryToDecimal(greenValue)}</div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm text-blue-500 font-medium">Blue Channel</label>
-                                            {renderBinaryInputs(blueValue, setBlueValue, 'blue')}
-                                            <div className="text-sm">Dec: {binaryToDecimal(blueValue)}</div>
-                                        </div>
-                                        <div className="space-y-2">
+
+                                        <div className="flex flex-col space-y-4">
                                             <label className="text-sm font-medium">Color Preview</label>
-                                            <div
-                                                className="w-full h-16 rounded border"
-                                                style={{ backgroundColor: getCurrentColor() }}
-                                            />
+                                            <div className="flex-1 rounded-lg shadow-inner" style={{
+                                                backgroundColor: getCurrentColor(),
+                                                border: '1px solid rgba(0,0,0,0.1)'
+                                            }} />
+                                            <div className="text-sm text-gray-500 font-mono">
+                                                RGB({bitsToDecimal(redBits)}, {bitsToDecimal(greenBits)}, {bitsToDecimal(blueBits)})
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </Card>
 
-                            <div className="w-full overflow-auto">
+                            <div className="w-full overflow-auto bg-white rounded-lg shadow-inner p-4">
                                 <canvas
                                     ref={canvasRef}
                                     width={canvasSize.width * pixelSize}
                                     height={canvasSize.height * pixelSize}
-                                    className="border border-gray-200 cursor-crosshair"
+                                    className="border border-gray-200 cursor-crosshair mx-auto"
                                     onMouseDown={handleMouseDown}
                                     onMouseMove={handleMouseMove}
                                     onMouseUp={handleMouseUp}
