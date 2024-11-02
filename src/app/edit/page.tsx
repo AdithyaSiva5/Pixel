@@ -74,8 +74,8 @@ const BinaryImageEditor: React.FC = () => {
                         variant={bit ? "default" : "outline"}
                         size="sm"
                         className={`w-10 h-10 p-0 font-mono ${bit
-                                ? `bg-${color}-500 hover:bg-${color}-600`
-                                : `hover:bg-${color}-100`
+                            ? `bg-${color}-500 hover:bg-${color}-600`
+                            : `hover:bg-${color}-100`
                             }`}
                         onClick={() => {
                             const newBits = [...bits];
