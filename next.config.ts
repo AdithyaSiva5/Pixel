@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    turbo: {
-    },
+  images: {
+    unoptimized: true, // For direct pixel access
   },
 };
 

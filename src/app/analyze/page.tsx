@@ -1,4 +1,4 @@
-"use client";
+"use client"
 import React, { useState, useCallback } from 'react';
 import { Upload, Download, Eye } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -55,12 +55,12 @@ export default function BinaryAnalyzer() {
     };
 
     return (
-        <div className="container mx-auto p-4 space-y-6">
+        <div className="container mx-auto p-4 space-y-6 max-w-7xl">
             <Card className="p-6">
                 <div className="space-y-4">
                     <h1 className="text-2xl font-bold">Binary Image Analyzer</h1>
 
-                    <div className="flex gap-4">
+                    <div className="flex flex-wrap gap-4">
                         <Button variant="outline" className="w-40">
                             <label className="cursor-pointer flex items-center gap-2">
                                 <Upload className="h-4 w-4" />
@@ -86,55 +86,59 @@ export default function BinaryAnalyzer() {
             </Card>
 
             {imageData.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {showPreview && (
                         <Card className="p-4">
                             <h2 className="text-lg font-semibold mb-4">Preview</h2>
-                            <div className="grid gap-1" style={{
-                                gridTemplateColumns: `repeat(${imageData[0].length}, minmax(0, 1fr))`
-                            }}>
-                                {imageData.map((row, y) =>
-                                    row.map((pixel, x) => (
-                                        <div
-                                            key={`${x}-${y}`}
-                                            className={`aspect-square border cursor-pointer transition-all ${selectedPixel?.x === x && selectedPixel?.y === y
-                                                ? 'ring-2 ring-blue-500'
-                                                : 'hover:ring-2 hover:ring-blue-300'
-                                                }`}
-                                            style={{
-                                                backgroundColor: `rgb(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`
-                                            }}
-                                            onClick={() => setSelectedPixel({ x, y })}
-                                        />
-                                    ))
-                                )}
+                            <div className="overflow-auto">
+                                <div className="grid gap-1 min-w-fit" style={{
+                                    gridTemplateColumns: `repeat(${imageData[0].length}, minmax(20px, 1fr))`
+                                }}>
+                                    {imageData.map((row, y) =>
+                                        row.map((pixel, x) => (
+                                            <div
+                                                key={`${x}-${y}`}
+                                                className={`aspect-square border cursor-pointer transition-all ${selectedPixel?.x === x && selectedPixel?.y === y
+                                                        ? 'ring-2 ring-blue-500'
+                                                        : 'hover:ring-2 hover:ring-blue-300'
+                                                    }`}
+                                                style={{
+                                                    backgroundColor: `rgb(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`
+                                                }}
+                                                onClick={() => setSelectedPixel({ x, y })}
+                                            />
+                                        ))
+                                    )}
+                                </div>
                             </div>
                         </Card>
                     )}
 
                     <Card className="p-4">
                         <h2 className="text-lg font-semibold mb-4">Binary Data</h2>
-                        <div className="space-y-2 font-mono text-sm">
-                            {imageData.map((row, y) =>
-                                row.map((pixel, x) => (
-                                    <div
-                                        key={`${x}-${y}`}
-                                        className={`p-2 rounded ${selectedPixel?.x === x && selectedPixel?.y === y
-                                            ? 'bg-blue-100 dark:bg-blue-900'
-                                            : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-                                            }`}
-                                    >
-                                        <div className="flex gap-2 items-center">
-                                            <span className="text-gray-500 w-16">
-                                                [{x}, {y}]:
-                                            </span>
-                                            <span className="text-red-500">{toBinary(pixel[0])}</span>
-                                            <span className="text-green-500">{toBinary(pixel[1])}</span>
-                                            <span className="text-blue-500">{toBinary(pixel[2])}</span>
+                        <div className="overflow-auto max-h-96">
+                            <div className="space-y-2 font-mono text-sm min-w-fit">
+                                {imageData.map((row, y) =>
+                                    row.map((pixel, x) => (
+                                        <div
+                                            key={`${x}-${y}`}
+                                            className={`p-2 rounded ${selectedPixel?.x === x && selectedPixel?.y === y
+                                                    ? 'bg-blue-100 dark:bg-blue-900'
+                                                    : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                                                }`}
+                                        >
+                                            <div className="flex gap-2 items-center">
+                                                <span className="text-gray-500 w-16">
+                                                    [{x}, {y}]:
+                                                </span>
+                                                <span className="text-red-500">{toBinary(pixel[0])}</span>
+                                                <span className="text-green-500">{toBinary(pixel[1])}</span>
+                                                <span className="text-blue-500">{toBinary(pixel[2])}</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))
-                            )}
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </Card>
                 </div>
@@ -144,7 +148,7 @@ export default function BinaryAnalyzer() {
                 <Card className="p-4">
                     <h2 className="text-lg font-semibold mb-4">Selected Pixel Analysis</h2>
                     <div className="space-y-4">
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div className="space-y-2">
                                 <div className="font-semibold text-red-500">Red Channel</div>
                                 <div className="font-mono">
@@ -171,5 +175,5 @@ export default function BinaryAnalyzer() {
                 </Card>
             )}
         </div>
-    )
+    );
 }
