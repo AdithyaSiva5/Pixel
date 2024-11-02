@@ -1,6 +1,6 @@
 "use client"
-import React, { useState, useCallback } from 'react';
-import { Upload, Download, Eye } from 'lucide-react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { Upload, Download, Eye, Binary } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/Button';
 
@@ -8,6 +8,8 @@ export default function BinaryAnalyzer() {
     const [imageData, setImageData] = useState<number[][][]>([]);
     const [selectedPixel, setSelectedPixel] = useState<{ x: number, y: number } | null>(null);
     const [showPreview, setShowPreview] = useState(true);
+    const [showBinary, setShowBinary] = useState(true);
+    const binaryDataRef = useRef<HTMLDivElement>(null);
 
     const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -54,6 +56,16 @@ export default function BinaryAnalyzer() {
         return num.toString(2).padStart(8, '0');
     };
 
+    // Scroll to selected pixel in binary view
+    useEffect(() => {
+        if (selectedPixel && binaryDataRef.current) {
+            const pixelElement = document.getElementById(`binary-${selectedPixel.x}-${selectedPixel.y}`);
+            if (pixelElement) {
+                pixelElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }, [selectedPixel]);
+
     return (
         <div className="container mx-auto p-4 space-y-6 max-w-7xl">
             <Card className="p-6">
@@ -81,12 +93,20 @@ export default function BinaryAnalyzer() {
                             <Eye className="h-4 w-4 mr-2" />
                             {showPreview ? 'Hide' : 'Show'} Preview
                         </Button>
+
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowBinary(!showBinary)}
+                        >
+                            <Binary className="h-4 w-4 mr-2" />
+                            {showBinary ? 'Hide' : 'Show'} Binary
+                        </Button>
                     </div>
                 </div>
             </Card>
 
             {imageData.length > 0 && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className={`grid gap-6 ${showPreview && showBinary ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
                     {showPreview && (
                         <Card className="p-4">
                             <h2 className="text-lg font-semibold mb-4">Preview</h2>
@@ -99,8 +119,8 @@ export default function BinaryAnalyzer() {
                                             <div
                                                 key={`${x}-${y}`}
                                                 className={`aspect-square border cursor-pointer transition-all ${selectedPixel?.x === x && selectedPixel?.y === y
-                                                        ? 'ring-2 ring-blue-500'
-                                                        : 'hover:ring-2 hover:ring-blue-300'
+                                                    ? 'ring-2 ring-blue-500'
+                                                    : 'hover:ring-2 hover:ring-blue-300'
                                                     }`}
                                                 style={{
                                                     backgroundColor: `rgb(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`
@@ -114,33 +134,36 @@ export default function BinaryAnalyzer() {
                         </Card>
                     )}
 
-                    <Card className="p-4">
-                        <h2 className="text-lg font-semibold mb-4">Binary Data</h2>
-                        <div className="overflow-auto max-h-96">
-                            <div className="space-y-2 font-mono text-sm min-w-fit">
-                                {imageData.map((row, y) =>
-                                    row.map((pixel, x) => (
-                                        <div
-                                            key={`${x}-${y}`}
-                                            className={`p-2 rounded ${selectedPixel?.x === x && selectedPixel?.y === y
+                    {showBinary && (
+                        <Card className="p-4">
+                            <h2 className="text-lg font-semibold mb-4">Binary Data</h2>
+                            <div className="overflow-auto max-h-96" ref={binaryDataRef}>
+                                <div className="space-y-2 font-mono text-sm min-w-fit">
+                                    {imageData.map((row, y) =>
+                                        row.map((pixel, x) => (
+                                            <div
+                                                id={`binary-${x}-${y}`}
+                                                key={`${x}-${y}`}
+                                                className={`p-2 rounded ${selectedPixel?.x === x && selectedPixel?.y === y
                                                     ? 'bg-blue-100 dark:bg-blue-900'
                                                     : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-                                                }`}
-                                        >
-                                            <div className="flex gap-2 items-center">
-                                                <span className="text-gray-500 w-16">
-                                                    [{x}, {y}]:
-                                                </span>
-                                                <span className="text-red-500">{toBinary(pixel[0])}</span>
-                                                <span className="text-green-500">{toBinary(pixel[1])}</span>
-                                                <span className="text-blue-500">{toBinary(pixel[2])}</span>
+                                                    }`}
+                                            >
+                                                <div className="flex gap-2 items-center">
+                                                    <span className="text-gray-500 w-16">
+                                                        [{x}, {y}]:
+                                                    </span>
+                                                    <span className="text-red-500">{toBinary(pixel[0])}</span>
+                                                    <span className="text-green-500">{toBinary(pixel[1])}</span>
+                                                    <span className="text-blue-500">{toBinary(pixel[2])}</span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))
-                                )}
+                                        ))
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    </Card>
+                        </Card>
+                    )}
                 </div>
             )}
 

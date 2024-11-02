@@ -1,10 +1,16 @@
 "use client"
 import React, { useState, useRef, useEffect } from 'react';
-import { Download, Eraser, Pencil, RotateCcw } from 'lucide-react';
+import { Download, Eraser, Pencil, RotateCcw, Dices, Palette } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/Button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/Slider";
+import dynamic from 'next/dynamic';
+
+// Prevent SSR for the main component
+const BinaryImageEditor = dynamic(() => Promise.resolve(BinaryImageEditorComponent), {
+    ssr: false
+});
 
 type Tool = 'pencil' | 'eraser';
 
@@ -13,18 +19,25 @@ interface CanvasSize {
     height: number;
 }
 
-const BinaryImageEditor: React.FC = () => {
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+const BinaryImageEditorComponent: React.FC = () => {
     const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
     const [isDrawing, setIsDrawing] = useState<boolean>(false);
     const [tool, setTool] = useState<Tool>('pencil');
     const [canvasSize, setCanvasSize] = useState<CanvasSize | null>(null);
     const [setupOpen, setSetupOpen] = useState<boolean>(true);
+    const [mounted, setMounted] = useState<boolean>(false);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
     const [tempCanvasSize, setTempCanvasSize] = useState<CanvasSize>({ width: 32, height: 32 });
-    const [pixelSize, setPixelSize] = useState<number>(16);
-    const [redBits, setRedBits] = useState<boolean[]>(new Array(8).fill(true));
-    const [greenBits, setGreenBits] = useState<boolean[]>(new Array(8).fill(true));
-    const [blueBits, setBlueBits] = useState<boolean[]>(new Array(8).fill(true));
+    const [pixelSize] = useState<number>(16);
+    const [redBits, setRedBits] = useState<boolean[]>(() => new Array(8).fill(true));
+    const [greenBits, setGreenBits] = useState<boolean[]>(() => new Array(8).fill(true));
+    const [blueBits, setBlueBits] = useState<boolean[]>(() => new Array(8).fill(true));
+
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         if (!canvasSize) return;
@@ -61,22 +74,68 @@ const BinaryImageEditor: React.FC = () => {
         return `rgb(${red}, ${green}, ${blue})`;
     };
 
+    // New function to generate random bits
+    const generateRandomBits = (): boolean[] => {
+        return new Array(8).fill(false).map(() => Math.random() > 0.5);
+    };
+
+    // New function to set random color
+    const setRandomColor = () => {
+        setRedBits(generateRandomBits());
+        setGreenBits(generateRandomBits());
+        setBlueBits(generateRandomBits());
+    };
+
+    // New function to randomize canvas
+    const randomizeCanvas = () => {
+        if (!context || !canvasSize) return;
+
+        for (let x = 0; x < canvasSize.width; x++) {
+            for (let y = 0; y < canvasSize.height; y++) {
+                const red = Math.floor(Math.random() * 256);
+                const green = Math.floor(Math.random() * 256);
+                const blue = Math.floor(Math.random() * 256);
+
+                context.fillStyle = `rgb(${red}, ${green}, ${blue})`;
+                context.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+                context.strokeStyle = '#eee';
+                context.strokeRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+            }
+        }
+    };
+
     const renderBitButtons = (
         bits: boolean[],
         setBits: (newBits: boolean[]) => void,
-        color: string
+        color: 'red' | 'green' | 'blue'
     ) => {
+        const getColorClasses = (isActive: boolean, colorType: string) => {
+            if (isActive) {
+                switch (colorType) {
+                    case 'red': return 'bg-red-500 hover:bg-red-600 text-white';
+                    case 'green': return 'bg-green-500 hover:bg-green-600 text-white';
+                    case 'blue': return 'bg-blue-500 hover:bg-blue-600 text-white';
+                    default: return '';
+                }
+            } else {
+                // Enhanced contrast for zero buttons
+                switch (colorType) {
+                    case 'red': return 'bg-gray-100 border-2 border-red-200 hover:bg-red-100';
+                    case 'green': return 'bg-gray-100 border-2 border-green-200 hover:bg-green-100';
+                    case 'blue': return 'bg-gray-100 border-2 border-blue-200 hover:bg-blue-100';
+                    default: return '';
+                }
+            }
+        };
+
         return (
-            <div className="grid grid-cols-8 gap-1">
+            <div className="grid grid-cols-8 "> {/* Reduced gap from gap-1 to gap-0.5 */}
                 {bits.map((bit, index) => (
                     <Button
                         key={index}
                         variant={bit ? "default" : "outline"}
                         size="sm"
-                        className={`w-10 h-10 p-0 font-mono ${bit
-                            ? `bg-${color}-500 hover:bg-${color}-600`
-                            : `hover:bg-${color}-100`
-                            }`}
+                        className={`w-7 h-7 sm:w-9 sm:h-9 p-0 font-mono ${getColorClasses(bit, color)}`} // Reduced size from w-8/h-8 to w-7/h-7
                         onClick={() => {
                             const newBits = [...bits];
                             newBits[index] = !bit;
@@ -196,13 +255,14 @@ const BinaryImageEditor: React.FC = () => {
             </Dialog>
 
             {canvasSize && (
-                <div className="container mx-auto p-4 space-y-6">
-                    <Card className="p-6">
-                        <div className="space-y-6">
-                            <div className="flex flex-wrap gap-4">
+                <div className="container mx-auto p-2 sm:p-4 space-y-4 sm:space-y-6">
+                    <Card className="p-3 sm:p-6">
+                        <div className="space-y-4 sm:space-y-6">
+                            <div className="flex flex-wrap gap-2">
                                 <Button
                                     variant={tool === 'pencil' ? 'default' : 'outline'}
                                     onClick={() => setTool('pencil')}
+                                    className="flex-grow sm:flex-grow-0"
                                 >
                                     <Pencil className="h-4 w-4 mr-2" />
                                     Draw
@@ -211,27 +271,54 @@ const BinaryImageEditor: React.FC = () => {
                                 <Button
                                     variant={tool === 'eraser' ? 'default' : 'outline'}
                                     onClick={() => setTool('eraser')}
+                                    className="flex-grow sm:flex-grow-0"
                                 >
                                     <Eraser className="h-4 w-4 mr-2" />
                                     Erase
                                 </Button>
 
-                                <Button variant="outline" onClick={clearCanvas}>
+                                <Button
+                                    variant="outline"
+                                    onClick={clearCanvas}
+                                    className="flex-grow sm:flex-grow-0"
+                                >
                                     <RotateCcw className="h-4 w-4 mr-2" />
                                     Clear
                                 </Button>
 
-                                <Button variant="outline" onClick={downloadImage}>
+                                <Button
+                                    variant="outline"
+                                    onClick={downloadImage}
+                                    className="flex-grow sm:flex-grow-0"
+                                >
                                     <Download className="h-4 w-4 mr-2" />
                                     Download
                                 </Button>
+
+                                <Button
+                                    variant="outline"
+                                    onClick={setRandomColor}
+                                    className="flex-grow sm:flex-grow-0"
+                                >
+                                    <Palette className="h-4 w-4 mr-2" />
+                                    Random Color
+                                </Button>
+
+                                <Button
+                                    variant="outline"
+                                    onClick={randomizeCanvas}
+                                    className="flex-grow sm:flex-grow-0"
+                                >
+                                    <Dices className="h-4 w-4 mr-2" />
+                                    Randomize
+                                </Button>
                             </div>
 
-                            <Card className="p-6 bg-gray-50">
-                                <div className="space-y-6">
+                            <Card className="p-4 sm:p-6 bg-gray-50">
+                                <div className="space-y-4 sm:space-y-6">
                                     <h2 className="text-lg font-semibold">Binary Color Control</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div className="space-y-6">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
+                                        <div className="space-y-4 sm:space-y-6">
                                             <div className="space-y-3">
                                                 <div className="flex justify-between items-center">
                                                     <label className="text-sm font-medium text-red-500">Red Channel</label>
@@ -257,7 +344,7 @@ const BinaryImageEditor: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        <div className="flex flex-col space-y-4">
+                                        <div className="flex flex-col space-y-4 min-h-[200px]">
                                             <label className="text-sm font-medium">Color Preview</label>
                                             <div className="flex-1 rounded-lg shadow-inner" style={{
                                                 backgroundColor: getCurrentColor(),
@@ -271,7 +358,7 @@ const BinaryImageEditor: React.FC = () => {
                                 </div>
                             </Card>
 
-                            <div className="w-full overflow-auto bg-white rounded-lg shadow-inner p-4">
+                            <div className="w-full overflow-auto bg-white rounded-lg shadow-inner p-2 sm:p-4">
                                 <canvas
                                     ref={canvasRef}
                                     width={canvasSize.width * pixelSize}
