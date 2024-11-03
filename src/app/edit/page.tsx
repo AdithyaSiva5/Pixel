@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Slider } from "@/components/ui/Slider";
 import dynamic from 'next/dynamic';
 
-// Prevent SSR for the main component
 const BinaryImageEditor = dynamic(() => Promise.resolve(BinaryImageEditorComponent), {
     ssr: false
 });
@@ -33,7 +32,6 @@ const BinaryImageEditorComponent: React.FC = () => {
     const [redBits, setRedBits] = useState<boolean[]>(() => new Array(8).fill(true));
     const [greenBits, setGreenBits] = useState<boolean[]>(() => new Array(8).fill(true));
     const [blueBits, setBlueBits] = useState<boolean[]>(() => new Array(8).fill(true));
-
 
     useEffect(() => {
         setMounted(true);
@@ -74,19 +72,16 @@ const BinaryImageEditorComponent: React.FC = () => {
         return `rgb(${red}, ${green}, ${blue})`;
     };
 
-    // New function to generate random bits
     const generateRandomBits = (): boolean[] => {
         return new Array(8).fill(false).map(() => Math.random() > 0.5);
     };
 
-    // New function to set random color
     const setRandomColor = () => {
         setRedBits(generateRandomBits());
         setGreenBits(generateRandomBits());
         setBlueBits(generateRandomBits());
     };
 
-    // New function to randomize canvas
     const randomizeCanvas = () => {
         if (!context || !canvasSize) return;
 
@@ -98,7 +93,7 @@ const BinaryImageEditorComponent: React.FC = () => {
 
                 context.fillStyle = `rgb(${red}, ${green}, ${blue})`;
                 context.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-                context.strokeStyle = '#eee';
+                context.strokeStyle = 'rgba(156, 163, 175, 0.2)';
                 context.strokeRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
             }
         }
@@ -112,30 +107,24 @@ const BinaryImageEditorComponent: React.FC = () => {
         const getColorClasses = (isActive: boolean, colorType: string) => {
             if (isActive) {
                 switch (colorType) {
-                    case 'red': return 'bg-red-500 hover:bg-red-600 text-white';
-                    case 'green': return 'bg-green-500 hover:bg-green-600 text-white';
-                    case 'blue': return 'bg-blue-500 hover:bg-blue-600 text-white';
+                    case 'red': return 'bg-red-500 hover:bg-red-600 text-white dark:bg-red-600 dark:hover:bg-red-700';
+                    case 'green': return 'bg-green-500 hover:bg-green-600 text-white dark:bg-green-600 dark:hover:bg-green-700';
+                    case 'blue': return 'bg-blue-500 hover:bg-blue-600 text-white dark:bg-blue-600 dark:hover:bg-blue-700';
                     default: return '';
                 }
             } else {
-                // Enhanced contrast for zero buttons
-                switch (colorType) {
-                    case 'red': return 'bg-gray-100 border-2 border-red-200 hover:bg-red-100';
-                    case 'green': return 'bg-gray-100 border-2 border-green-200 hover:bg-green-100';
-                    case 'blue': return 'bg-gray-100 border-2 border-blue-200 hover:bg-blue-100';
-                    default: return '';
-                }
+                return 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border-2 border-gray-200 dark:border-gray-700';
             }
         };
 
         return (
-            <div className="grid grid-cols-8 "> {/* Reduced gap from gap-1 to gap-0.5 */}
+            <div className="grid grid-cols-8 gap-0.5">
                 {bits.map((bit, index) => (
                     <Button
                         key={index}
                         variant={bit ? "default" : "outline"}
                         size="sm"
-                        className={`w-7 h-7 sm:w-9 sm:h-9 p-0 font-mono ${getColorClasses(bit, color)}`} // Reduced size from w-8/h-8 to w-7/h-7
+                        className={`w-7 h-7 sm:w-9 sm:h-9 p-0 font-mono ${getColorClasses(bit, color)}`}
                         onClick={() => {
                             const newBits = [...bits];
                             newBits[index] = !bit;
@@ -179,7 +168,7 @@ const BinaryImageEditorComponent: React.FC = () => {
         context.fillStyle = color;
         context.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
 
-        context.strokeStyle = '#eee';
+        context.strokeStyle = 'rgba(156, 163, 175, 0.2)';
         context.strokeRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
     };
 
@@ -196,7 +185,7 @@ const BinaryImageEditorComponent: React.FC = () => {
 
         for (let x = 0; x < canvasSize.width; x++) {
             for (let y = 0; y < canvasSize.height; y++) {
-                ctx.strokeStyle = '#eee';
+                ctx.strokeStyle = 'rgba(156, 163, 175, 0.2)';
                 ctx.strokeRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
             }
         }
@@ -223,7 +212,7 @@ const BinaryImageEditorComponent: React.FC = () => {
                             <div>
                                 <div className="flex justify-between items-center mb-2">
                                     <label className="text-sm font-medium">Width</label>
-                                    <span className="text-sm text-gray-500">{tempCanvasSize.width}px</span>
+                                    <span className="text-sm text-gray-500 dark:text-gray-400">{tempCanvasSize.width}px</span>
                                 </div>
                                 <Slider
                                     min={1}
@@ -237,7 +226,7 @@ const BinaryImageEditorComponent: React.FC = () => {
                             <div>
                                 <div className="flex justify-between items-center mb-2">
                                     <label className="text-sm font-medium">Height</label>
-                                    <span className="text-sm text-gray-500">{tempCanvasSize.height}px</span>
+                                    <span className="text-sm text-gray-500 dark:text-gray-400">{tempCanvasSize.height}px</span>
                                 </div>
                                 <Slider
                                     min={1}
@@ -314,7 +303,7 @@ const BinaryImageEditorComponent: React.FC = () => {
                                 </Button>
                             </div>
 
-                            <Card className="p-4 sm:p-6 bg-gray-50">
+                            <Card className="p-4 sm:p-6 bg-gray-50 dark:bg-gray-900">
                                 <div className="space-y-4 sm:space-y-6">
                                     <h2 className="text-lg font-semibold">Binary Color Control</h2>
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
@@ -322,7 +311,7 @@ const BinaryImageEditorComponent: React.FC = () => {
                                             <div className="space-y-3">
                                                 <div className="flex justify-between items-center">
                                                     <label className="text-sm font-medium text-red-500">Red Channel</label>
-                                                    <span className="text-sm text-gray-500">Dec: {bitsToDecimal(redBits)}</span>
+                                                    <span className="text-sm text-gray-500 dark:text-gray-400">Dec: {bitsToDecimal(redBits)}</span>
                                                 </div>
                                                 {renderBitButtons(redBits, setRedBits, 'red')}
                                             </div>
@@ -330,7 +319,7 @@ const BinaryImageEditorComponent: React.FC = () => {
                                             <div className="space-y-3">
                                                 <div className="flex justify-between items-center">
                                                     <label className="text-sm font-medium text-green-500">Green Channel</label>
-                                                    <span className="text-sm text-gray-500">Dec: {bitsToDecimal(greenBits)}</span>
+                                                    <span className="text-sm text-gray-500 dark:text-gray-400">Dec: {bitsToDecimal(greenBits)}</span>
                                                 </div>
                                                 {renderBitButtons(greenBits, setGreenBits, 'green')}
                                             </div>
@@ -338,7 +327,8 @@ const BinaryImageEditorComponent: React.FC = () => {
                                             <div className="space-y-3">
                                                 <div className="flex justify-between items-center">
                                                     <label className="text-sm font-medium text-blue-500">Blue Channel</label>
-                                                    <span className="text-sm text-gray-500">Dec: {bitsToDecimal(blueBits)}</span>
+                                                    {/* Fixed the missing dark mode class to match others */}
+                                                    <span className="text-sm text-gray-500 dark:text-gray-400">Dec: {bitsToDecimal(blueBits)}</span>
                                                 </div>
                                                 {renderBitButtons(blueBits, setBlueBits, 'blue')}
                                             </div>
@@ -346,11 +336,14 @@ const BinaryImageEditorComponent: React.FC = () => {
 
                                         <div className="flex flex-col space-y-4 min-h-[200px]">
                                             <label className="text-sm font-medium">Color Preview</label>
-                                            <div className="flex-1 rounded-lg shadow-inner" style={{
-                                                backgroundColor: getCurrentColor(),
-                                                border: '1px solid rgba(0,0,0,0.1)'
-                                            }} />
-                                            <div className="text-sm text-gray-500 font-mono">
+                                            <div
+                                                className="flex-1 rounded-lg shadow-inner"
+                                                style={{
+                                                    backgroundColor: getCurrentColor(),
+                                                    border: '1px solid rgba(0,0,0,0.1)'
+                                                }}
+                                            />
+                                            <div className="text-sm text-gray-500 dark:text-gray-400 font-mono">
                                                 RGB({bitsToDecimal(redBits)}, {bitsToDecimal(greenBits)}, {bitsToDecimal(blueBits)})
                                             </div>
                                         </div>
@@ -358,12 +351,12 @@ const BinaryImageEditorComponent: React.FC = () => {
                                 </div>
                             </Card>
 
-                            <div className="w-full overflow-auto bg-white rounded-lg shadow-inner p-2 sm:p-4">
+                            <div className="w-full overflow-auto bg-white dark:bg-gray-700 rounded-lg shadow-inner p-2 sm:p-4">
                                 <canvas
                                     ref={canvasRef}
                                     width={canvasSize.width * pixelSize}
                                     height={canvasSize.height * pixelSize}
-                                    className="border border-gray-200 cursor-crosshair mx-auto"
+                                    className="border border-gray-200 dark:border-gray-600 cursor-crosshair mx-auto"
                                     onMouseDown={handleMouseDown}
                                     onMouseMove={handleMouseMove}
                                     onMouseUp={handleMouseUp}
