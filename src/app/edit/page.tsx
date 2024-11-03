@@ -351,7 +351,7 @@ const BinaryImageEditorComponent: React.FC = () => {
                                 </div>
                             </Card>
 
-                            <div className="w-full overflow-auto bg-white dark:bg-gray-700 rounded-lg shadow-inner p-2 sm:p-4">
+                            <div className="w-full overflow-auto bg-gray-100 dark:bg-gray-800 rounded-lg shadow-inner p-2 sm:p-4">
                                 <canvas
                                     ref={canvasRef}
                                     width={canvasSize.width * pixelSize}
