@@ -1,0 +1,1 @@
+If you remove the white background of the canvas we can get a perfect png only with our drawings.
